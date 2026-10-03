@@ -1,0 +1,11 @@
+root = true
+default = "13"
+name = "debian"
+
+[[target]]
+name = "13"
+aliases = ["trixie"]
+
+[[target]]
+name = "12"
+alias = ["bookworm"]
