@@ -41,7 +41,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "21"
+          java-version: "25"
 
       - name: Build stable downloader
         run: docker build -f docker/app/Dockerfile --target downloader -t "$DL_REPO:stable-tmp" .
@@ -53,16 +53,18 @@ jobs:
         id: version
         run: |
           extract_version() {
-            local image=$1 dest=$2
+            local image=$1 dest=$2 log=$3
             local cid
             cid=$(docker create "$image")
             docker cp "$cid:/opt/zomboid" "$dest"
             docker rm "$cid" > /dev/null
-            ( cd "$dest" && LD_LIBRARY_PATH="$dest/linux64:$dest" ./ProjectZomboid64 --version 2>&1 \
-              | grep -oE 'version=[0-9]+\.[0-9]+' | head -1 | cut -d= -f2 )
+            ( cd "$dest" && LD_LIBRARY_PATH="$dest/linux64:$dest" ./ProjectZomboid64 --version > "$log" 2>&1 ) || true
+            grep -oE 'version=[0-9]+\.[0-9]+' "$log" | head -1 | cut -d= -f2
           }
-          STABLE=$(extract_version "$DL_REPO:stable-tmp" /tmp/zstable)
-          UNSTABLE=$(extract_version "$DL_REPO:unstable-tmp" /tmp/zunstable)
+          STABLE=$(extract_version "$DL_REPO:stable-tmp" /tmp/zstable /tmp/zstable.log) || true
+          UNSTABLE=$(extract_version "$DL_REPO:unstable-tmp" /tmp/zunstable /tmp/zunstable.log) || true
+          if [ -z "$STABLE" ]; then echo "ERROR: stable version detection failed. Game output:"; tail -30 /tmp/zstable.log; exit 1; fi
+          if [ -z "$UNSTABLE" ]; then echo "ERROR: unstable version detection failed. Game output:"; tail -30 /tmp/zunstable.log; exit 1; fi
           echo "stable=$STABLE" >> "$GITHUB_OUTPUT"
           echo "unstable=$UNSTABLE" >> "$GITHUB_OUTPUT"
           echo "stable=$STABLE unstable=$UNSTABLE"
