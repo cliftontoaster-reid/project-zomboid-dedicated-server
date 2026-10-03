@@ -24,6 +24,7 @@ interface BuildOptions {
   variant: "root" | "rootless";
   primary: boolean;
   registry: string;
+  downloaderImage: string;
   configDir: string;
   push: boolean;
   dryRun: boolean;
@@ -136,7 +137,7 @@ await new Command()
   .option("-o, --os <os:string>", "Target OS family (e.g. debian)")
   .option("-v, --os-version <version:string>", "Target OS version (e.g. 13)")
   .option("-m, --game-major <major:string>", "Game major version", { default: "42" })
-  .option("-p, --game-patch <patch:string>", "Game patch version", { default: "19" })
+  .option("-p, --game-patch <patch:string>", "Game patch version", { default: "21" })
   .option("-u, --unstable [unstable:boolean]", "Build unstable branch", { default: false })
   .option("--variant <variant:string>", "Build target variant (root or rootless)", {
     default: "root",
@@ -147,6 +148,11 @@ await new Command()
   .option("-r, --registry <registry:string>", "Container registry image name", {
     default: "cliftontoasterreid/project-zomboid-dedicated-server",
   })
+  .option(
+    "--downloader-image <image:string>",
+    "Prebuilt downloader image providing /opt/zomboid (skips the Steam download)",
+    { default: "" },
+  )
   .option("-c, --config-dir <dir:string>", "Path to TOML configuration directory", {
     default: "config/os",
   })
@@ -225,6 +231,10 @@ await new Command()
           "-f",
           "docker/app/Dockerfile",
         ];
+
+        if (opts.downloaderImage) {
+          appBuildCmd.push("--build-arg", `DOWNLOADER_IMAGE=${opts.downloaderImage}`);
+        }
 
         for (const tag of tags) {
           appBuildCmd.push("-t", tag);
