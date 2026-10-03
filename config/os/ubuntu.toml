@@ -1,0 +1,10 @@
+default = "26.04"
+name = "ubuntu"
+
+[[target]]
+name = "26.04"
+aliases = ["resolute"]
+
+[[target]]
+name = "24.04"
+aliases = ["noble"]

@@ -1,0 +1,6 @@
+default = "9"
+name = "rocky"
+
+[[target]]
+name = "9"
+aliases = ["blue-onyx"]

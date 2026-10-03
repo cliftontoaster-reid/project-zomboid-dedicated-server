@@ -8,4 +8,4 @@ aliases = ["trixie"]
 
 [[target]]
 name = "12"
-alias = ["bookworm"]
+aliases = ["bookworm"]
