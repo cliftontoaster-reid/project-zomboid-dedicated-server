@@ -26,9 +26,8 @@ ENV JAVA_HOME=/usr/lib/jvm/temurin-25-jdk-amd64
 RUN useradd -m -d /home/steam steam
 
 WORKDIR /home/steam/steamcmd
-RUN curl -sqL "https://client-update.steamstatic.com/installer/steamcmd_linux.tar.gz" | tar zxvf -
-
-RUN ln -s /home/steam/steamcmd/steamcmd.sh /usr/local/bin/steamcmd && \
+RUN curl -sqL "https://client-update.steamstatic.com/installer/steamcmd_linux.tar.gz" | tar zxvf - && \
+  ln -s /home/steam/steamcmd/steamcmd.sh /usr/local/bin/steamcmd && \
   chown -R steam:steam /home/steam
 
 CMD ["steamcmd", "+quit"]

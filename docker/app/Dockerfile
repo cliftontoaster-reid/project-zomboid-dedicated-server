@@ -1,8 +1,5 @@
 ARG BASE=debian:13-slim
 ARG BASE_IMAGE=$BASE
-# Image (or local stage) providing /opt/zomboid. Defaults to the
-# "downloader" stage below; CI passes a prebuilt registry image to
-# skip the Steam download in every matrix job.
 ARG DOWNLOADER_IMAGE=downloader
 
 # ---------- Stage 1: download the game once ----------
@@ -38,12 +35,12 @@ RUN set -e; \
   ln -sf "$JAVA_BIN"/* /usr/local/bin/; \
   java -version; \
   ls -l /usr/local/bin/java
-COPY --from=game-src /opt/zomboid /opt/zomboid
+COPY --from=game-src --chown=steam:steam /opt/zomboid /opt/zomboid
 COPY docker/app/entrypoint.sh /opt/zomboid/entrypoint.sh
 RUN chmod 777 /opt/zomboid/entrypoint.sh
 
 ENTRYPOINT [ "/bin/sh", "/opt/zomboid/entrypoint.sh" ]
-CMD [  "/opt/zomboid/ProjectZomboid64" ]
+CMD [ "/opt/zomboid/ProjectZomboid64" ]
 
 EXPOSE 16261/udp 16262/udp
 
@@ -51,5 +48,4 @@ FROM common-base AS root
 USER root
 
 FROM common-base AS rootless
-RUN chown -R steam:steam /opt/zomboid
 USER steam
