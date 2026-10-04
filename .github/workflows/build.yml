@@ -94,10 +94,11 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Set up Deno
-        uses: denoland/setup-deno@v2
-        with:
-          deno-version: v2.x
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
 
       - name: Log in to Docker Hub
         if: github.event_name != 'pull_request'
@@ -126,4 +127,4 @@ jobs:
           if [ "${{ github.event_name }}" != "pull_request" ]; then
             ARGS+=(--push --downloader-image "$DL_REPO:$VERSION$DL_TAG_SUFFIX")
           fi
-          deno task build "${ARGS[@]}"
+          cargo run --release -p builder -- "${ARGS[@]}"
