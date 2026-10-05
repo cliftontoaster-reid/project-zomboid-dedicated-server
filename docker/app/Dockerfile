@@ -15,9 +15,14 @@ RUN SCRIPT=install_zomboid.txt; \
   for i in 1 2 3; do \
   steamcmd +runscript /tmp/$SCRIPT +quit && break; \
   echo "Attempt $i failed, retrying..."; sleep 10; \
-  done; \
-  test -f /opt/zomboid/start-server.sh && \
-  rm -rf /opt/zomboid/jre64
+  done;
+RUN test -f /opt/zomboid/start-server.sh && \
+  rm -rf /opt/zomboid/jre64 \
+  /opt/zomboid/ProjectZomboid32 \
+  /opt/zomboid/ProjectZomboid32.json \
+  /opt/zomboid/linux32 \
+  /opt/zomboid/steamapps/downloading \
+  /opt/zomboid/steamapps/temp
 
 # ---------- Stage 1b: game source ----------
 FROM $DOWNLOADER_IMAGE AS game-src
@@ -33,7 +38,10 @@ COPY crates/builder crates/builder
 COPY crates/entrypoint crates/entrypoint
 # Building for an explicit target keeps proc-macro crates dynamic while the
 # binary itself links statically against musl.
-RUN target="$(rustc -vV | sed -n 's/^host: //p')" && \
+RUN --mount=type=cache,target=/root/.cargo/registry \
+  --mount=type=cache,target=/root/.cargo/git \
+  --mount=type=cache,target=/build/target \
+  target="$(rustc -vV | sed -n 's/^host: //p')" && \
   cargo build --release --locked -p entrypoint --target "$target" && \
   cp "target/$target/release/entrypoint" /entrypoint
 
@@ -51,8 +59,8 @@ RUN set -e; \
   ln -sf "$JAVA_BIN"/* /usr/local/bin/; \
   java -version; \
   ls -l /usr/local/bin/java
-COPY --from=game-src --chown=steam:steam /opt/zomboid /opt/zomboid
-COPY --from=entrypoint-build --chmod=0755 /entrypoint /usr/local/bin/zomboid-entrypoint
+COPY --link --from=game-src --chown=1000:1000 /opt/zomboid /opt/zomboid
+COPY --link --from=entrypoint-build --chmod=0755 /entrypoint /usr/local/bin/zomboid-entrypoint
 
 # ---------- Server configuration (see crates/entrypoint/src/config.rs) ----------
 # check=skip=SecretsUsedInArgOrEnv
