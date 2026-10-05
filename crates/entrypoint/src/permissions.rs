@@ -1,9 +1,4 @@
-use std::{
-  ffi::CString,
-  io,
-  os::unix::fs::MetadataExt,
-  path::Path,
-};
+use std::{ffi::CString, io, os::unix::fs::MetadataExt, path::Path};
 
 use walkdir::WalkDir;
 
@@ -22,7 +17,10 @@ pub fn fix_permissions(path: &Path, puid: u32, pgid: u32) -> io::Result<()> {
     }
   }
 
-  println!("Adjusting permissions for {:?} to {}:{}...", path, puid, pgid);
+  println!(
+    "Adjusting permissions for {:?} to {}:{}...",
+    path, puid, pgid
+  );
 
   for entry in WalkDir::new(path).into_iter().filter_map(|e| e.ok()) {
     let c_path = CString::new(entry.path().to_str().unwrap_or_default())

@@ -15,7 +15,7 @@ use tokio::{
   time::sleep,
 };
 
-use crate::config::Config;
+use crate::{config::Config, models::ServerConfig};
 
 #[derive(Deserialize)]
 pub struct LauncherConfig {
@@ -56,7 +56,11 @@ pub fn java_command() -> PathBuf {
   }
 }
 
-pub fn open_control(data_path: &Path, puid: u32, pgid: u32) -> io::Result<(std::fs::File, std::fs::File)> {
+pub fn open_control(
+  data_path: &Path,
+  puid: u32,
+  pgid: u32,
+) -> io::Result<(std::fs::File, std::fs::File)> {
   let path = data_path.join("zomboid.control");
 
   if !path.exists() {
@@ -86,9 +90,13 @@ pub fn open_control(data_path: &Path, puid: u32, pgid: u32) -> io::Result<(std::
   Ok((control, stdin))
 }
 
-pub async fn launch_server(config: &Config, stdin: std::fs::File) -> io::Result<Child> {
-  let game_path = PathBuf::from(&config.game_path);
-  let launcher = read_launcher_config(&game_path, &config.memory)?;
+pub async fn launch_server(
+  config: &Config,
+  server_config: &ServerConfig,
+  stdin: std::fs::File,
+) -> io::Result<Child> {
+  let game_path = PathBuf::from(config.game_path());
+  let launcher = read_launcher_config(&game_path, config.memory())?;
 
   let mut cmd = Command::new(java_command());
 
@@ -96,8 +104,8 @@ pub async fn launch_server(config: &Config, stdin: std::fs::File) -> io::Result<
 
   // If running as root, drop privileges to the requested PUID and PGID
   if unsafe { libc::geteuid() } == 0 {
-    cmd.as_std_mut().uid(config.puid);
-    cmd.as_std_mut().gid(config.pgid);
+    cmd.as_std_mut().uid(config.puid());
+    cmd.as_std_mut().gid(config.pgid());
   }
 
   cmd.env("HOME", "/home/steam");
@@ -114,16 +122,20 @@ pub async fn launch_server(config: &Config, stdin: std::fs::File) -> io::Result<
   cmd
     .arg(&launcher.main_class)
     .arg("-servername")
-    .arg(&config.server_name)
-    .arg("-adminpassword")
-    .arg(&config.admin_password)
-    .arg("-port")
-    .arg(config.port.to_string())
-    .arg("-udpport")
-    .arg(config.steam_port.to_string())
-    .arg(format!("-cachedir={}", config.data_path));
+    .arg(config.server_name());
 
-  if config.soft_reset {
+  if let Some(password) = config.admin_password() {
+    cmd.arg("-adminpassword").arg(password);
+  }
+
+  cmd
+    .arg("-port")
+    .arg(server_config.default_port.to_string())
+    .arg("-udpport")
+    .arg(server_config.udp_port.to_string())
+    .arg(format!("-cachedir={}", config.data_path()));
+
+  if config.soft_reset() {
     cmd.arg("-softreset");
   }
 

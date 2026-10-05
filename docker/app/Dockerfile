@@ -62,26 +62,6 @@ RUN set -e; \
 COPY --link --from=game-src --chown=1000:1000 /opt/zomboid /opt/zomboid
 COPY --link --from=entrypoint-build --chmod=0755 /entrypoint /usr/local/bin/zomboid-entrypoint
 
-# ---------- Server configuration (see crates/entrypoint/src/config.rs) ----------
-# check=skip=SecretsUsedInArgOrEnv
-ENV SERVER_NAME=servertest \
-  ADMIN_PASSWORD=ChangeMe123 \
-  SERVER_PASSWORD="" \
-  PORT=16261 \
-  STEAM_PORT=16262 \
-  RCON_PORT=27015 \
-  RCON_PASSWORD=ChangeMe123 \
-  MEMORY=4g \
-  MAX_PLAYERS=16 \
-  PAUSE_EMPTY=true \
-  STEAM_VAC=true \
-  UPNP=false \
-  SOFT_RESET=false \
-  DATA_PATH=/home/steam/ZomboidServer \
-  GAME_PATH=/opt/zomboid \
-  PUID=1000 \
-  PGID=1000
-
 VOLUME [ "/home/steam/ZomboidServer" ]
 
 # The entrypoint takes a SIGTERM, writes "save" to $DATA_PATH/zomboid.control,

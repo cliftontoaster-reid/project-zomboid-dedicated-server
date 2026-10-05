@@ -194,15 +194,38 @@ impl ServerConfig {
   }
 
   pub fn apply_cli(&mut self, cli: &Config) {
-    self.public_name = cli.server_name.clone();
-    self.password = cli.server_password.clone();
-    self.default_port = cli.port;
-    self.udp_port = cli.steam_port;
-    self.rcon_port = cli.rcon_port as u32;
-    self.rcon_password = cli.rcon_password.clone();
-    self.max_players = cli.max_players;
-    self.pause_empty = cli.pause_empty;
-    self.steam_vac = cli.steam_vac;
-    self.upnp = cli.upnp;
+    // These are the entrypoint options that have corresponding Project Zomboid
+    // INI keys. Runtime-only options such as paths, memory, and UID/GID are
+    // intentionally handled outside the server configuration.
+    if let Some(value) = &cli.server_name {
+      self.public_name = value.clone();
+    }
+    if let Some(value) = &cli.server_password {
+      self.password = value.clone();
+    }
+    if let Some(value) = cli.port {
+      self.default_port = value;
+    }
+    if let Some(value) = cli.steam_port {
+      self.udp_port = value;
+    }
+    if let Some(value) = cli.rcon_port {
+      self.rcon_port = value as u32;
+    }
+    if let Some(value) = &cli.rcon_password {
+      self.rcon_password = value.clone();
+    }
+    if let Some(value) = cli.max_players {
+      self.max_players = value;
+    }
+    if let Some(value) = cli.pause_empty {
+      self.pause_empty = value;
+    }
+    if let Some(value) = cli.steam_vac {
+      self.steam_vac = value;
+    }
+    if let Some(value) = cli.upnp {
+      self.upnp = value;
+    }
   }
 }
