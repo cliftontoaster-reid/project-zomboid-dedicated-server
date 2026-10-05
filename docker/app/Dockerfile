@@ -78,7 +78,11 @@ ENV SERVER_NAME=servertest \
   UPNP=false \
   SOFT_RESET=false \
   DATA_PATH=/home/steam/ZomboidServer \
-  GAME_PATH=/opt/zomboid
+  GAME_PATH=/opt/zomboid \
+  PUID=1000 \
+  PGID=1000
+
+VOLUME [ "/home/steam/ZomboidServer" ]
 
 # The entrypoint takes a SIGTERM, writes "save" to $DATA_PATH/zomboid.control,
 # waits 15s and then writes "quit" so the world is saved before exit. That needs

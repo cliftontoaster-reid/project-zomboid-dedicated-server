@@ -1,131 +1,17 @@
 pub mod cli;
 pub mod config;
 pub mod models;
+pub mod runner;
+pub mod tags;
+
+use std::process::exit;
 
 use clap::Parser;
-use std::process::{Command, exit};
-
 use cli::Cli;
 use config::{discover_os_configs, load_os_config};
-use models::{OsConfig, TargetEntry};
-
-fn push_unique(tags: &mut Vec<String>, tag: String) {
-  if !tags.contains(&tag) {
-    tags.push(tag);
-  }
-}
-
-fn run_command(cmd: &[String], dry_run: bool) {
-  println!("\n$ {}", cmd.join(" "));
-  if dry_run {
-    return;
-  }
-
-  let status = Command::new(&cmd[0]).args(&cmd[1..]).status();
-
-  match status {
-    Ok(status) if status.success() => {}
-    Ok(status) => {
-      let code = status.code().unwrap_or(1);
-      eprintln!("Command failed with exit code {code}");
-      exit(code);
-    }
-    Err(err) => {
-      eprintln!("Command failed with exit code 1");
-      eprintln!("{err}");
-      exit(1);
-    }
-  }
-}
-
-fn generate_tags(os_config: &OsConfig, target: &TargetEntry, opts: &Cli) -> Vec<String> {
-  let branch_suffix = if opts.unstable { "-unstable" } else { "" };
-  let variant_suffix = if opts.variant == "rootless" {
-    "-rootless"
-  } else {
-    ""
-  };
-  let primary_branch_tag = if opts.unstable { "unstable" } else { "latest" };
-
-  let is_default_os_version = os_config.default == target.name;
-  let is_root_os = os_config.root;
-
-  let mut version_keys = vec![target.name.clone()];
-  version_keys.extend(target.resolve_aliases());
-
-  let mut tags: Vec<String> = Vec::new();
-
-  for v_key in &version_keys {
-    push_unique(
-      &mut tags,
-      format!(
-        "{}:{}.{}{}-{}-{}{}",
-        opts.registry,
-        opts.game_major,
-        opts.game_patch,
-        branch_suffix,
-        os_config.name,
-        v_key,
-        variant_suffix
-      ),
-    );
-    push_unique(
-      &mut tags,
-      format!(
-        "{}:{}{}-{}-{}{}",
-        opts.registry, opts.game_major, branch_suffix, os_config.name, v_key, variant_suffix
-      ),
-    );
-  }
-
-  if is_default_os_version {
-    push_unique(
-      &mut tags,
-      format!(
-        "{}:{}.{}{}-{}{}",
-        opts.registry,
-        opts.game_major,
-        opts.game_patch,
-        branch_suffix,
-        os_config.name,
-        variant_suffix
-      ),
-    );
-    push_unique(
-      &mut tags,
-      format!(
-        "{}:{}{}-{}{}",
-        opts.registry, opts.game_major, branch_suffix, os_config.name, variant_suffix
-      ),
-    );
-  }
-
-  if is_root_os && is_default_os_version {
-    push_unique(
-      &mut tags,
-      format!(
-        "{}:{}.{}{}{}",
-        opts.registry, opts.game_major, opts.game_patch, branch_suffix, variant_suffix
-      ),
-    );
-    push_unique(
-      &mut tags,
-      format!(
-        "{}:{}{}{}",
-        opts.registry, opts.game_major, branch_suffix, variant_suffix
-      ),
-    );
-  }
-
-  if is_root_os && is_default_os_version && opts.primary {
-    push_unique(
-      &mut tags,
-      format!("{}:{}{}", opts.registry, primary_branch_tag, variant_suffix),
-    );
-  }
-
-  tags
-}
+use models::TargetEntry;
+use runner::run_command;
+use tags::generate_tags;
 
 fn main() {
   let opts = Cli::parse();

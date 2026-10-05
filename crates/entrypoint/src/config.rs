@@ -126,4 +126,12 @@ pub struct Config {
   /// Probe the running server over RCON and exit, used by the image healthcheck
   #[arg(long)]
   pub healthcheck: bool,
+
+  /// UID to use when launching the server
+  #[arg(long, env = "PUID", default_value_t = 1000)]
+  pub puid: u32,
+
+  /// GID to use when launching the server
+  #[arg(long, env = "PGID", default_value_t = 1000)]
+  pub pgid: u32,
 }
